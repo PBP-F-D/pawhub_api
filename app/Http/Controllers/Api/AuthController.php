@@ -104,4 +104,57 @@ class AuthController extends Controller
             'user' => $user
         ]);
     }
+
+    public function update(Request $request, $id) 
+    {
+        $user = User::find($id); //mencari data product berdasar id
+        if(is_null($user)) {
+            return response([
+                'message' => 'User Not Found',
+                'data' => null
+            ], 404);
+        } //return message saat data tidak ditemukan
+
+        $updateData = $request->all(); //abil semua input dari api client
+        $validate = VAlidator::make($updateData, [
+            'email' =>'required|email:rfc,dns',
+            'name' => 'required',
+            'phone' => 'required',
+            'photo' => '',
+            'city' => 'required',
+            'country' => 'required'
+        ]); //rule validasi input
+
+        if($validate->fails()) 
+            return response(['message' => $validate->errors()],400); //return error invalid input
+        
+        
+        $user->email = $updateData['email']; //edit nama_produk
+        $user->name = $updateData['name'];
+        $user->phone = $updateData['phone'];
+        $user->city = $updateData['city'];
+        $user->country = $updateData['country'];
+
+        if($updateData['picture'] != null) {
+            $file = $request->file('picture');
+            $extension = $file->getClientOriginalExtension();
+            $filename = 'uploads/'.time().'.'.$extension;
+            $pathImage = $file->move(public_path("uploads"), $filename);
+            $user->picture = url($filename);
+        }
+      
+        if($user->save()) {
+            return response([
+                'message' => 'Update User Success',
+                'data' => $user
+            ], 200);
+        } //return data yang telah diedit dalam bentuk json
+
+
+        return response([
+            'message' => 'Update User Failed',
+            'data' => $user
+        ], 400);  //return message saat produk gagat diedit
+    }
+
 }
